@@ -1,0 +1,55 @@
+name: Build ROG Ally Optimizer
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Show files
+      run: Get-ChildItem
+      shell: pwsh
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        architecture: 'x64'
+
+    - name: Install
+      run: pip install pyinstaller pillow
+      shell: pwsh
+
+    - name: Build
+      shell: pwsh
+      run: |
+        # Create simple icon
+        python -c "
+        from PIL import Image
+        img = Image.new('RGB', (32,32), (255,0,34))
+        img.save('icon.ico')
+        "
+        # Verify files exist
+        Write-Host 'Files present:'
+        Get-ChildItem *.ps1, *.py
+        # Build
+        pyinstaller `
+          --onefile `
+          --windowed `
+          --name ROGAllyOptimizer `
+          --icon icon.ico `
+          --uac-admin `
+          "--add-data=ROGAllyOptimizer.ps1;." `
+          launcher.py
+        # Show result
+        Write-Host 'Build output:'
+        Get-ChildItem dist
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: ROGAllyOptimizer-x64
+        path: dist/ROGAllyOptimizer.exe
+        retention-days: 90
